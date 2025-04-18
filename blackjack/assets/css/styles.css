@@ -1,0 +1,29 @@
+html,
+body {
+  margin: 0px;
+  background-color: #2F4F30;
+  color: white;
+}
+
+.title {
+  text-align: center;
+  background-color: black;
+  color: white;
+  padding: 20px;
+  font-size: 25px;
+}
+
+.card {
+  position: relative;
+  width: 150px;
+  left: 100px;
+  margin-left: -75px;
+  display: -ms-flexbox;
+  display: inline;
+  background-color: transparent;
+}
+
+#dealer-cards,
+#player-cards {
+  height: 240px;
+}
