@@ -1,118 +1,121 @@
-/**
- * C = Clubs (Tréboles)
- * D = Diamons (Diamantes)
- * H = Hearts (Corazones)
- * S = Spades (Espadas)
- */
-let deck = [], playerPoints = 0, dealerPoints = 0;
-const types = ["C", "D", "H", "S"];
-const figures = ["A", "J", "Q", "K"];
+const myModule = (() => {
+  'use strict';
+  // Variables
+  let deck = [], playersPoints = [];
+  const types = ["C", "D", "H", "S"],
+    figures = ["A", "J", "Q", "K"],
+    //Referencias HTML
+    btnGetCard = document.querySelector('#btnGetCard'),
+    btnStop = document.querySelector('#btnStop'),
+    divCardsPlayers = document.querySelectorAll('.divCards'),
+    smallPoints = document.querySelectorAll('small');
 
-//Referencias HTML
-const btnGetCard = document.querySelector('#btnGetCard');
-const btnNewGame = document.querySelector('#btnNewGame');
-const btnStop = document.querySelector('#btnStop');
-const divPlayerCards = document.querySelector('#player-cards');
-const divDealerCards = document.querySelector('#dealer-cards');
-const smalls = document.querySelectorAll('small');
-
-//Crea nueva baraja
-const createDeck = () => {
-  for (let j = 2; j <= 10; j++) {
-    for (let type of types) {
-      deck.push(j + type);
+  //Inicializar el juego
+  const startGame = (numPlayers = 2) => {
+    deck = createDeck();
+    playersPoints = [];
+    for (let i = 0; i < numPlayers; i++) {
+      playersPoints.push(0);
     }
+    smallPoints.forEach(elem => elem.innerText = 0);
+    divCardsPlayers.forEach(elem => elem.innerHTML = '');
+    btnGetCard.disabled = false;
+    btnStop.disabled = false;
   }
-  for (let fig of figures) {
-    for (let type of types) {
-      deck.push(fig + type);
+
+  //Crea nueva baraja
+  const createDeck = () => {
+    deck = [];
+    for (let i = 2; i <= 10; i++) {
+      for (let type of types) {
+        deck.push(i + type);
+      }
     }
-  }
-  deck = _.shuffle(deck);
-  console.log(deck);
-  return deck;
-};
-createDeck();
+    for (let fig of figures) {
+      for (let type of types) {
+        deck.push(fig + type);
+      }
+    }
+    return _.shuffle(deck);
+  };
 
-//Pedir nueva carta
-const getCard = () => {
-  if (deck.length === 0) {
-    throw "Deck sin cartas";
-  }
-  const card = deck.pop();
-  return card;
-};
-//getCard();
-const cardValue = (card) => {
-  const value = card.substring(0, card.length - 1);
-  return ( isNaN( value ) ) ? ( value === 'A' ) ? 11 : 10 : value * 1;
-};
+  //Pedir carta
+  const getCard = () => {
+    if (deck.length === 0) {
+      throw "Deck sin cartas";
+    }
+    return deck.pop();
+  };
+  //Valor de la carta
+  const cardValue = (card) => {
+    const value = card.substring(0, card.length - 1);
+    console.log(value);
+    return (isNaN(value)) ? (value === 'A') ? 11 : 10 : value * 1;
+  };
 
-//Turno del dealer
-const dealerTurn = (playerPoints) => {
-  do{
-    const card = getCard();
-    dealerPoints += cardValue(card);
-    smalls[1].innerText = dealerPoints;
+  const sumPlayerPoints = (card, turn) => {
+    playersPoints[turn] += cardValue(card);
+    smallPoints[turn].innerText = playersPoints[turn];
+    return playersPoints[turn];
+  }
+
+  const createCardElement = (card, turn) => {
     const imgCard = document.createElement('img');
     imgCard.src = `assets/cartas/${card}.png`;
     imgCard.classList.add('card');
-    divDealerCards.append(imgCard);
-    if(playerPoints > 21) break;
-  } while((dealerPoints < playerPoints) && (playerPoints <= 21));
-  setTimeout(() => {
+    divCardsPlayers[turn].append(imgCard);
+  }
+
+  const chooseWinner = () => {
+    const [playerPoints, dealerPoints] = playersPoints;
+    setTimeout(() => {
+      if (dealerPoints === playerPoints) {
+        console.warn('Empate!');
+      } else if (playerPoints > 21) {
+        console.warn('Dealer Gana!');
+      } else if (dealerPoints > 21) {
+        console.warn('Ganaste!');
+      } else {
+        alert('Dealer Gana!')
+      }
+    }, 100);
+  }
+
+  //turn del dealer
+  const dealerTurn = (playerPoints) => {
+    let dealerPoints = 0;
+    do {
+      const card = getCard();
+      dealerPoints = sumPlayerPoints(card, playersPoints.length - 1);
+      createCardElement(card, playersPoints.length - 1);
+    } while ((dealerPoints < playerPoints) && (playerPoints <= 21));
+    chooseWinner();
+  };
+
+  //Eventos
+  btnGetCard.addEventListener('click', () => {
+    const card = getCard(),
+      playerPoints = sumPlayerPoints(card, 0);
+    createCardElement(card, 0);
+
     if (playerPoints > 21) {
       console.warn('Perdiste');
-    } else if (dealerPoints === playerPoints) {
-      console.warn('Empate!');
-    } else if (dealerPoints > 21) {
-      console.warn('Ganaste!');
-    } else {
-      console.warn('Perdiste!');
+      btnGetCard.disabled = true;
+      btnStop.disabled = true;
+      dealerTurn(playerPoints);
+    } else if (playerPoints === 21) {
+      console.warn('21, genial!');
+      btnGetCard.disabled = true;
+      btnStop.disabled = true;
+      dealerTurn(playerPoints);
     }
-    btnNewGame.disabled = false;
-  },100);
-};
-
-//Eventos
-btnGetCard.addEventListener('click', () => {
-  const card = getCard();
-  playerPoints += cardValue(card);
-  smalls[0].innerText = playerPoints;
-  const imgCard = document.createElement('img');
-  imgCard.src = `assets/cartas/${card}.png`;
-  imgCard.classList.add('card');
-  divPlayerCards.append(imgCard);
-
-  if (playerPoints > 21) {
-    console.warn('Perdiste');
+  });
+  btnStop.addEventListener('click', () => {
     btnGetCard.disabled = true;
     btnStop.disabled = true;
-    btnNewGame.disabled = false;
-  } else if (playerPoints === 21) {
-    btnGetCard.disabled = true;
-    btnStop.disabled = true;
-    btnNewGame.disabled = false;
-    dealerTurn(playerPoints);
-  }
-});
-btnStop.addEventListener('click', () => {
-  btnGetCard.disabled = true;
-  btnStop.disabled = true;
-  dealerTurn(playerPoints);
-});
-
-btnNewGame.addEventListener('click', () => {
-  console.clear();
-  console.log('Iniciando nuevo juego');
-  deck = [];
-  deck = createDeck();
-  playerPoints = 0;
-  dealerPoints = 0;
-  smalls[0].innerText = 0;
-  smalls[1].innerText = 0;
-  divPlayerCards.innerHTML = '';
-  divDealerCards.innerHTML = '';
-  btnGetCard.disabled = false;
-  btnStop.disabled = false;
-});
+    dealerTurn(playersPoints[0]);
+  });
+  return {
+    newGame: startGame
+  };
+})();
